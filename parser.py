@@ -1,5 +1,8 @@
 import re
+import argparse
 
+# Add this at the beginning of your script
+    
 def read_java_file(file_path):
     """Reads a Java file and returns the content as a string."""
     with open(file_path, 'r') as file:
@@ -42,27 +45,56 @@ def restore_comments_and_strings(code, placeholders):
         code = code.replace(f"PLACEHOLDER_{i}", placeholder)
     return code
 
+import re
+
 def add_curly_braces(code):
     """Ensures that decision structures and loops have curly braces."""
-    # Add curly braces to single-line if, else-if, else, for, while, and do-while blocks
-    patterns = [
-        r'(?<!\})\s*if\s*\(.*?\)\s*[^{;]\s*.*\n',  # if without braces
-        r'(?<!\})\s*else\s*if\s*\(.*?\)\s*[^{;]\s*.*\n',  # else-if without braces
-        r'(?<!\})\s*else\s*[^{;]\s*.*\n',  # else without braces
-        r'(?<!\})\s*for\s*\(.*?\)\s*[^{;]\s*.*\n',  # for without braces
-        r'(?<!\})\s*while\s*\(.*?\)\s*[^{;]\s*.*\n',  # while without braces
-        r'(?<!\})\s*do\s*[^{;]\s*.*\n',  # do without braces
-    ]
+    # Regex to match control structures without opening braces
+    pattern = r'^( *)(if|else if|else|switch|while|do|for) *\([^\)]*\)\s*(?!\{)\s*$|^( *)do\s*$'
     
-    # For each pattern, add the missing curly braces
-    for pattern in patterns:
-        matches = re.findall(pattern, code)
-        for match in matches:
-            # Add braces around the block
-            fixed_block = re.sub(r'(.*\))\s*(.*)', r'\1 {\n\2\n}', match)
-            code = code.replace(match, fixed_block)
+    def replace_block(match):
+        indentation = match.group(1) or match.group(3)  # Get the correct indentation
+        control_statement = match.group(0).strip()
+
+        # Find the line immediately following the control statement
+        following_lines = re.findall(r'^' + re.escape(indentation) + r' {4}[^\s].*$', code[match.end():], re.MULTILINE)
+        if following_lines:
+            # Capture the first statement following the control structure
+            first_statement = following_lines[0]
+            # Remove the original statement
+            new_code_part = code[match.end():].replace(first_statement, '', 1).strip()
+
+            # Create the block with the additional indentation and braces
+            new_block = f"{control_statement} {{\n{first_statement}\n{indentation}}}"
+
+            # Return the updated block without the duplicated unbracketed statement
+            return f"{control_statement} {{\n{first_statement}\n{indentation}}}\n"
+        return f"{control_statement} {{\n{indentation}}}\n"
+
+    # Apply the replacement for all control structures (including 'do' loops)
+    updated_code = re.sub(pattern, replace_block, code, flags=re.MULTILINE)
+
+    # Handle 'else' statements separately since they can come without conditions
+    else_pattern = r'^( *)(else)\s*(?!\{)\s*$'
     
-    return code
+    def replace_else(match):
+        indentation = match.group(1)
+        else_statement = match.group(0).strip()
+
+        # Find the line immediately following the 'else' statement
+        following_lines = re.findall(r'^' + re.escape(indentation) + r' {4}[^\s].*$', code[match.end():], re.MULTILINE)
+        if following_lines:
+            first_statement = following_lines[0]
+            new_code_part = code[match.end():].replace(first_statement, '', 1).strip()
+            new_block = f"{else_statement} {{\n{first_statement}\n{indentation}}}"
+            return new_block + new_code_part
+        return else_statement
+
+    # Apply the replacement for 'else' blocks
+    updated_code = re.sub(else_pattern, replace_else, updated_code, flags=re.MULTILINE)
+    
+    return updated_code
+
 
 def count_methods(code):
     """Counts the number of methods in the Java code."""
@@ -92,6 +124,11 @@ def fix_java_code(file_path):
     
     print(f"Processed file saved as {output_file_path}")
 
-# Example usage
-file_path = 'input_program.java'
-fix_java_code(file_path)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Fix Java code by adding curly braces and counting methods.')
+    parser.add_argument('file_path', type=str, help='Path to the input Java file')
+    args = parser.parse_args()
+    
+    fix_java_code(args.file_path)
+
