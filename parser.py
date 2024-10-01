@@ -1,8 +1,6 @@
 import re
 import argparse
 
-# Add this at the beginning of your script
-    
 def read_java_file(file_path):
     """Reads a Java file and returns the content as a string."""
     with open(file_path, 'r') as file:
@@ -45,57 +43,25 @@ def restore_comments_and_strings(code, placeholders):
         code = code.replace(f"PLACEHOLDER_{i}", placeholder)
     return code
 
-import re
-
+def identify_control_structures(code):
+    pattern_with_condition = r'''(^\s*)(if|else if|switch|while|for) *\([^\)]*\)\s*(?!\{)\s*\n(?:\1\s{4}.*\n)*'''
+    pattern_without_condition = r'''(^\s*)(else|do)\s*(?!\{)\s*\n(?:\1\s{4}.*\n)*'''
+    matches_with_condition = re.finditer(pattern_with_condition, code, re.MULTILINE)
+    matches_without_condition = re.finditer(pattern_without_condition, code, re.MULTILINE)
+    
+    control_structures = []
+    for match in matches_with_condition:
+        control_structures.append(match.group(0))
+    for match in matches_without_condition:
+        control_structures.append(match.group(0))
+    print (control_structures)
+    return control_structures
 def add_curly_braces(code):
-    """Ensures that decision structures and loops have curly braces."""
-    # Regex to match control structures without opening braces
-    pattern = r'^( *)(if|else if|else|switch|while|do|for) *\([^\)]*\)\s*(?!\{)\s*$|^( *)do\s*$'
+    code = find_control_structures(code)
     
-    def replace_block(match):
-        indentation = match.group(1) or match.group(3)  # Get the correct indentation
-        control_statement = match.group(0).strip()
-
-        # Find the line immediately following the control statement
-        following_lines = re.findall(r'^' + re.escape(indentation) + r' {4}[^\s].*$', code[match.end():], re.MULTILINE)
-        if following_lines:
-            # Capture the first statement following the control structure
-            first_statement = following_lines[0]
-            # Remove the original statement
-            new_code_part = code[match.end():].replace(first_statement, '', 1).strip()
-
-            # Create the block with the additional indentation and braces
-            new_block = f"{control_statement} {{\n{first_statement}\n{indentation}}}"
-
-            # Return the updated block without the duplicated unbracketed statement
-            return f"{control_statement} {{\n{first_statement}\n{indentation}}}\n"
-        return f"{control_statement} {{\n{indentation}}}\n"
-
-    # Apply the replacement for all control structures (including 'do' loops)
-    updated_code = re.sub(pattern, replace_block, code, flags=re.MULTILINE)
-
-    # Handle 'else' statements separately since they can come without conditions
-    else_pattern = r'^( *)(else)\s*(?!\{)\s*$'
-    
-    def replace_else(match):
-        indentation = match.group(1)
-        else_statement = match.group(0).strip()
-
-        # Find the line immediately following the 'else' statement
-        following_lines = re.findall(r'^' + re.escape(indentation) + r' {4}[^\s].*$', code[match.end():], re.MULTILINE)
-        if following_lines:
-            first_statement = following_lines[0]
-            new_code_part = code[match.end():].replace(first_statement, '', 1).strip()
-            new_block = f"{else_statement} {{\n{first_statement}\n{indentation}}}"
-            return new_block + new_code_part
-        return else_statement
-
-    # Apply the replacement for 'else' blocks
-    updated_code = re.sub(else_pattern, replace_else, updated_code, flags=re.MULTILINE)
-    
-    return updated_code
-
-
+    # This will need to do a bit of recursion, we will use identify_control structures, and then add curly braces around each code block
+    # Then, we will strip the first line of our control strucure, and call add_curly braces on the code stripped of the initial match to find nested statements.
+    #     
 def count_methods(code):
     """Counts the number of methods in the Java code."""
     method_pattern = r'\b(public|private|protected|static|\s)*[\w\<\>\[\]]+\s+[\w]+ *\([^)]*\) *\{'
@@ -105,25 +71,24 @@ def count_methods(code):
 def fix_java_code(file_path):
     """Fixes the input Java code and generates a new file with the results."""
     original_code = read_java_file(file_path)
-    
+    identify_control_structures(original_code)
     # Remove comments and strings
-    code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
+    #code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
     
     # Add curly braces where missing in decision structures and loops
-    updated_code = add_curly_braces(code_no_comments_strings)
+   #updated_code = add_curly_braces(code_no_comments_strings)
     
     # Restore the comments and strings back into the updated code
-    updated_code = restore_comments_and_strings(updated_code, placeholders)
+    #updated_code = restore_comments_and_strings(updated_code, placeholders)
     
     # Count the number of methods in the updated code
-    method_count = count_methods(updated_code)
+    #method_count = count_methods(updated_code)
     
     # Write the output file
-    output_file_path = 'java_program_output.txt'
-    write_output_file(output_file_path, original_code, updated_code, method_count)
+    #output_file_path = 'java_program_output.txt'
+    #write_output_file(output_file_path, original_code, updated_code, method_count)
     
-    print(f"Processed file saved as {output_file_path}")
-
+    #print(f"Processed file saved as {output_file_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fix Java code by adding curly braces and counting methods.')
@@ -131,4 +96,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     fix_java_code(args.file_path)
-
