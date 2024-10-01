@@ -57,19 +57,8 @@ def identify_control_structures(code):
     print (control_structures)
     return control_structures
 def add_curly_braces(code):
-    code_to_wrap = identify_control_structures(code)
-    for block in code_to_wrap:
-        lines = block.split('\n')
-        if len(lines) > 1:
-            lines.insert(1, '{')
-            lines.append('}')
-        wrapped_block = '\n'.join(lines)
-        code = code.replace(block, wrapped_block)
-        # Recursively check for nested structures
-        nested_code = '\n'.join(lines[1:-1])
-        nested_code_with_braces = add_curly_braces(nested_code)
-        code = code.replace(nested_code, nested_code_with_braces)
-    return code
+    code = identify_control_structures(code)
+    
     # This will need to do a bit of recursion, we will use identify_control structures, and then add curly braces around each code block
     # Then, we will strip the first line of our control strucure, and call add_curly braces on the code stripped of the initial match to find nested statements.
     #     
@@ -82,23 +71,24 @@ def count_methods(code):
 def fix_java_code(file_path):
     """Fixes the input Java code and generates a new file with the results."""
     original_code = read_java_file(file_path)
+    identify_control_structures(original_code)
     # Remove comments and strings
-    code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
+    #code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
     
     # Add curly braces where missing in decision structures and loops
-    updated_code = add_curly_braces(code_no_comments_strings)
+   #updated_code = add_curly_braces(code_no_comments_strings)
     
     # Restore the comments and strings back into the updated code
-    updated_code = restore_comments_and_strings(updated_code, placeholders)
+    #updated_code = restore_comments_and_strings(updated_code, placeholders)
     
     # Count the number of methods in the updated code
-    method_count = count_methods(updated_code)
+    #method_count = count_methods(updated_code)
     
     # Write the output file
-    output_file_path = 'java_program_output.txt'
-    write_output_file(output_file_path, original_code, updated_code, method_count)
+    #output_file_path = 'java_program_output.txt'
+    #write_output_file(output_file_path, original_code, updated_code, method_count)
     
-    print(f"Processed file saved as {output_file_path}")
+    #print(f"Processed file saved as {output_file_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fix Java code by adding curly braces and counting methods.')
