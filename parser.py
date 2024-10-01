@@ -57,7 +57,7 @@ def identify_control_structures(code):
     print (control_structures)
     return control_structures
 def add_curly_braces(code):
-    code = find_control_structures(code)
+    code = identify_control_structures(code)
     
     # This will need to do a bit of recursion, we will use identify_control structures, and then add curly braces around each code block
     # Then, we will strip the first line of our control strucure, and call add_curly braces on the code stripped of the initial match to find nested statements.
