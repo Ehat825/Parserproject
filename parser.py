@@ -56,9 +56,34 @@ def identify_control_structures(code):
         control_structures.append(match.group(0))
     print (control_structures)
     return control_structures
+
 def add_curly_braces(code):
-    code = identify_control_structures(code)
+    # Ensure code is a string before proceeding
+    if isinstance(code, list):
+        code = ''.join(code)
     
+    # Assuming identify_control_structures returns a list of code segments (strings)
+    structures = identify_control_structures(code)
+    updated_code = code  # Make sure code is a string
+    
+    for structure in structures:
+        # Split the structure into lines
+        lines = structure.split('\n')
+        
+        # Capture leading whitespace from the first line
+        leading_whitespace = re.match(r'^\s*', lines[0]).group(0)
+        
+        # Add curly braces with the captured leading whitespace
+        lines.insert(1, f'{leading_whitespace}{{')  # Add opening curly brace after the first line
+        lines.append(f'{leading_whitespace}}}')  # Add closing curly brace at the end
+        
+        updated_structure = '\n'.join(lines)
+
+        # Update the main code by replacing the old structure with the updated one
+        updated_code = updated_code.replace(structure, updated_structure)
+
+    return updated_code
+
     # This will need to do a bit of recursion, we will use identify_control structures, and then add curly braces around each code block
     # Then, we will strip the first line of our control strucure, and call add_curly braces on the code stripped of the initial match to find nested statements.
     #     
@@ -73,22 +98,22 @@ def fix_java_code(file_path):
     original_code = read_java_file(file_path)
     identify_control_structures(original_code)
     # Remove comments and strings
-    #code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
+    code_no_comments_strings, placeholders = remove_comments_and_strings(original_code)
     
     # Add curly braces where missing in decision structures and loops
-   #updated_code = add_curly_braces(code_no_comments_strings)
+    updated_code = add_curly_braces(code_no_comments_strings)
     
     # Restore the comments and strings back into the updated code
-    #updated_code = restore_comments_and_strings(updated_code, placeholders)
+    updated_code = restore_comments_and_strings(updated_code, placeholders)
     
-    # Count the number of methods in the updated code
-    #method_count = count_methods(updated_code)
+     #Count the number of methods in the updated code
+    method_count = count_methods(updated_code)
     
     # Write the output file
-    #output_file_path = 'java_program_output.txt'
-    #write_output_file(output_file_path, original_code, updated_code, method_count)
+    output_file_path = 'java_program_output.txt'
+    write_output_file(output_file_path, original_code, updated_code, method_count)
     
-    #print(f"Processed file saved as {output_file_path}")
+    print(f"Processed file saved as {output_file_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fix Java code by adding curly braces and counting methods.')
