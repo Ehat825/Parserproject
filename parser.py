@@ -46,41 +46,52 @@ def restore_comments_and_strings(code, placeholders):
 def line_by_line(Code):
     lines = Code.split("\n")
     updated_lines = []
+    indent_stack = []
     i = 0
 
     while i < len(lines):
         line = lines[i]
+
         if re.search(r'(^\s*)(do)\s*$', line):
             updated_lines.append(line)
-            updated_lines.append("    {")
+            indent_stack.append(re.match(r'^\s*', line).group(0) + "    ")
+            updated_lines.append(indent_stack[-1] + "{")
             i += 1
             while i < len(lines):
                 next_line = lines[i]
                 if re.search(r'(^\s*)(while)\s*\([^\)]*\)\s*;', next_line):
-                    updated_lines.append("    }")
+                    updated_lines.append(indent_stack.pop() + "}")
                     updated_lines.append(next_line)
                     break
                 updated_lines.append(next_line)
                 i += 1
-        elif re.search(r'(^\s*)(if|else if|switch|while|for) *\([^\)]*\)\s*(?!\{)\s*$', line):
+        elif re.search(r'(^\s*)(if|else if|while|for) *\([^\)]*\)\s*(?!\{)\s*$', line):
+            indent = re.match(r'^\s*', line).group(0)
             updated_lines.append(line)
-            updated_lines.append("    {")
+            indent_stack.append(indent + "    ")
+            updated_lines.append(indent_stack[-1] + "{")
             i += 1
             while i < len(lines):
                 next_line = lines[i]
                 if next_line.strip() == "" or not re.match(r'^\s{4}', next_line):
-                    updated_lines.append("    }")
+                    updated_lines.append(indent_stack.pop() + "}")
                     break
+                if re.search(r'(^\s*)(if|else if|else|while|for|do)\s*(?!\{)\s*$', next_line):
+                    updated_lines.append(indent_stack.pop() + "}")
+                    i -= 1 # hacky workaround
+                    break   
                 updated_lines.append(next_line)
                 i += 1
         elif re.search(r'(^\s*)(else)\s*(?!\{)\s*$', line):
+            indent = re.match(r'^\s*', line).group(0)
             updated_lines.append(line)
-            updated_lines.append("    {")
+            indent_stack.append(indent + "    ")
+            updated_lines.append(indent_stack[-1] + "{")
             i += 1
             while i < len(lines):
                 next_line = lines[i]
                 if next_line.strip() == "" or not re.match(r'^\s{4}', next_line):
-                    updated_lines.append("    }")
+                    updated_lines.append(indent_stack.pop() + "}")
                     break
                 updated_lines.append(next_line)
                 i += 1
