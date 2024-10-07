@@ -5,9 +5,11 @@ def read_java_file(file_path):
     """Reads a Java file and returns the content as a string."""
     with open(file_path, 'r') as file:
         return file.read()
+
 def get_indentation(line):
     """Returns the indentation of a line."""
     return len(re.match(r'^\s*', line).group(0))
+
 def write_output_file(output_path, original_code, updated_code, method_count):
     """Writes the output text file with the original and updated code and method count."""
     with open(output_path, 'w') as file:
@@ -22,9 +24,7 @@ def remove_comments_and_strings(code):
     # Regex patterns for strings, single-line comments, and multi-line comments
     string_pattern = r'\"(\\.|[^"\\])*\"'  # matches strings like "abc" or escaped quotes
     single_line_comment_pattern = r'//.*'  # matches single-line comments
-    multi_line_comment_pattern = r'/\*[\s\S]*?\*/'  # matches multi-line comments
-
-    # Replace strings and comments with placeholders
+    multi_line_comment_pattern = r'/\*[\s\S]*?\*/'  # matches multi-line
     placeholders = []
     
     def replace_with_placeholder(match):
@@ -105,13 +105,54 @@ def line_by_line(Code):
 
     return "\n".join(updated_lines)
 
+def count_methods(code):
+        """Counts the number of methods in the Java code."""
+        method_pattern = r'\b(public|private|protected|static|\s)*\s*(\w+\s+)*\w+\s*\([^)]*\)\s*(\{)?'
+        methods = re.findall(method_pattern, code)
+        return len(methods)
 
+def fix_methods(code):
+    """Counts the number of methods in the Java code."""
+    method_pattern = r'\b(public|private|protected|static)*\s*(\w+\s+)*\w+\s*\([^)]*\)\s*(\{)?'
+
+    lines = code.split("\n")
+    updated_lines = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+        match = re.search(method_pattern, line)
+        if match:
+            if not match.group(3):  # If there's no opening brace
+                level = get_indentation(line) + 4
+                indent = " " * level
+                line = line + " {"
+                updated_lines.append(line)
+                i += 1
+                while i < len(lines):
+                    next_line = lines[i]
+                    nestLevel = get_indentation(next_line)
+                    if nestLevel < level or next_line.strip() == "":
+                        updated_lines.append(indent + "}")
+                        updated_lines.append(next_line)
+                        break
+                    updated_lines.append(next_line)
+                    i += 1
+            else:
+                updated_lines.append(line)
+        else:
+            updated_lines.append(line)
+        i += 1
+
+    code = "\n".join(updated_lines)
+    return code
 
 def count_methods(code):
     """Counts the number of methods in the Java code."""
     method_pattern = r'\b(public|private|protected|static|\s)*[\w\<\>\[\]]+\s+[\w]+ *\([^)]*\) *\{'
     methods = re.findall(method_pattern, code)
     return len(methods)
+
 
 def fix_java_code(file_path):
     """Fixes the input Java code and generates a new file with the results."""
@@ -121,13 +162,14 @@ def fix_java_code(file_path):
     
     # Add curly braces where missing in decision structures and loops
     updated_code = line_by_line(code_no_comments_strings)
-    
-    #Count the number of methods in code without comments or strings
-    method_count = count_methods(code_no_comments_strings)
+    #fix methods
+    updated_code = fix_methods(updated_code)
 
     # Restore the comments and strings back into the updated code
     updated_code = restore_comments_and_strings(updated_code, placeholders)
     
+    # Count the number of methods in the original code
+    method_count = count_methods(original_code)
     # Write the output file
     output_file_path = 'java_program_output.txt'
     write_output_file(output_file_path, original_code, updated_code, method_count)
