@@ -170,6 +170,7 @@ def fix_java_code(file_path):
     
     # Count the number of methods in the original code
     method_count = count_methods(original_code)
+    
     # Write the output file
     output_file_path = 'java_program_output.txt'
     write_output_file(output_file_path, original_code, updated_code, method_count)
