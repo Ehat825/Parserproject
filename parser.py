@@ -5,7 +5,9 @@ def read_java_file(file_path):
     """Reads a Java file and returns the content as a string."""
     with open(file_path, 'r') as file:
         return file.read()
-
+def get_indentation(line):
+    """Returns the indentation of a line."""
+    return len(re.match(r'^\s*', line).group(0))
 def write_output_file(output_path, original_code, updated_code, method_count):
     """Writes the output text file with the original and updated code and method count."""
     with open(output_path, 'w') as file:
@@ -50,45 +52,51 @@ def line_by_line(Code):
 
     while i < len(lines):
         line = lines[i]
-
         if re.search(r'(^\s*)(do)\s*$', line):
-            updated_lines.append(line)
+            level = get_indentation(line) + 4
+            indent = " " * level
             line = line + " {"
+            updated_lines.append(line)
             i += 1
             while i < len(lines):
                 next_line = lines[i]
-                if re.search(r'(^\s*)(while)\s*\([^\)]*\)\s*;', next_line):
-                    updated_lines.append("    }")
+                nestLevel = get_indentation(next_line)
+                if nestLevel < level:
+                    updated_lines.append(indent + "}")
                     updated_lines.append(next_line)
                     break
                 updated_lines.append(next_line)
                 i += 1
+
+
         elif re.search(r'(^\s*)(if|else if|while|for|switch) *\([^\)]*\)\s*(?!\{)\s*$', line):
-            indent = re.match(r'^\s*', line).group(0)
+            level = get_indentation(line) + 4
+            indent = " " * (level)
             line = line + " {"
             updated_lines.append(line)
             i += 1
             while i < len(lines):
                 next_line = lines[i]
-                if next_line.strip() == "" or not re.match(r'^\s{4}', next_line):
-                    updated_lines.append("    }")
+                nestLevel = get_indentation(next_line)
+                if nestLevel <level or next_line.strip() == "":
+                    updated_lines.append(indent + "}")
+                    i -= 1 
                     break
-                if re.search(r'(^\s*)(if|else if|else|while|for|do|switch)\s*(?!\{)\s*$', next_line):
-                    updated_lines.append("    }")
-                    i -= 1 # hacky workaround
-                    break   
                 updated_lines.append(next_line)
                 i += 1
         elif re.search(r'(^\s*)(else)\s*(?!\{)\s*$', line):
-            indent = re.match(r'^\s*', line).group(0)
+            level = get_indentation(line) +1
+            indent = " " * (level)
             line = line + " {"
             updated_lines.append(line)
             i += 1
             while i < len(lines):
                 next_line = lines[i]
-                if next_line.strip() == "" or not re.match(r'^\s{4}', next_line):
-                    updated_lines.append("    }")
+                nestLevel = get_indentation(next_line)
+                if nestLevel <level or next_line.strip() == "":
+                    updated_lines.append(indent + "}")
                     break
+
                 updated_lines.append(next_line)
                 i += 1
         else:
