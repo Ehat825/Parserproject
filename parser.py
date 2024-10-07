@@ -122,11 +122,12 @@ def fix_java_code(file_path):
     # Add curly braces where missing in decision structures and loops
     updated_code = line_by_line(code_no_comments_strings)
     
+    #Count the number of methods in code without comments or strings
+    method_count = count_methods(code_no_comments_strings)
+
     # Restore the comments and strings back into the updated code
     updated_code = restore_comments_and_strings(updated_code, placeholders)
     
-     #Count the number of methods in the updated code
-    method_count = count_methods(updated_code)
     # Write the output file
     output_file_path = 'java_program_output.txt'
     write_output_file(output_file_path, original_code, updated_code, method_count)
