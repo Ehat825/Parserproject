@@ -67,9 +67,11 @@ def line_by_line(Code):
                     break
                 updated_lines.append(next_line)
                 i += 1
-
-
-        elif re.search(r'(^\s*)(if|else if|while|for|switch) *\([^\)]*\)\s*(?!\{)\s*$', line):
+        elif re.search(r'(^\s*)(while) *\([^\)]*\)\s*(?!\{)\s*$', line):
+            check = isdowhile(lines,i)
+            if check ==True: 
+                i +=1
+                line = lines[i]
             level = get_indentation(line) + 4
             indent = " " * (level)
             line = line + " {"
@@ -80,7 +82,23 @@ def line_by_line(Code):
                 nestLevel = get_indentation(next_line)
                 if nestLevel <level or next_line.strip() == "":
                     updated_lines.append(indent + "}")
-                    i -= 1 
+                    i += 1 
+                    break
+                updated_lines.append(next_line)
+                i += 1
+
+        elif re.search(r'(^\s*)(if|else if|for|switch) *\([^\)]*\)\s*(?!\{)\s*$', line):
+            level = get_indentation(line) + 4
+            indent = " " * (level)
+            line = line + " {"
+            updated_lines.append(line)
+            i += 1
+            while i < len(lines):
+                next_line = lines[i]
+                nestLevel = get_indentation(next_line)
+                if nestLevel <level or next_line.strip() == "":
+                    updated_lines.append(indent + "}")
+                    i += 1 
                     break
                 updated_lines.append(next_line)
                 i += 1
@@ -105,16 +123,24 @@ def line_by_line(Code):
 
     return "\n".join(updated_lines)
 
+def isdowhile(lines,i):
+    line = reversed(lines[:i])
+    for l in line:
+        if re.search(r'(^\s*)(if|else if|while|for|switch) *\([^\)]*\)\s*(?!\{)\s*$', l) or re.search(r'(^\s*)(else)\s*(?!\{)\s*$', l):
+            return False
+        if re.search(r'(^\s*)(do)\s*$', l):
+            return True
+        return False
+
 def count_methods(code):
         """Counts the number of methods in the Java code."""
-        method_pattern = r'\b(public|private|protected|static|\s)*\s*(\w+\s+)*\w+\s*\([^)]*\)\s*(\{)?'
+        method_pattern = r'(public|protected|private|static|\s) +[\w\<\>\[\]]+\s+(\w+) *\([^\)]*\) *(\{?|[^;])'
         methods = re.findall(method_pattern, code)
         return len(methods)
 
 def fix_methods(code):
     """Counts the number of methods in the Java code."""
-    method_pattern = r'\b(public|private|protected|static)*\s*(\w+\s+)*\w+\s*\([^)]*\)\s*(\{)?'
-
+    method_pattern = r'(public|protected|private|static|\s) +[\w\<\>\[\]]+\s+(\w+) *\([^\)]*\) *(\{?|[^;])'
     lines = code.split("\n")
     updated_lines = []
     i = 0
@@ -164,7 +190,6 @@ def fix_java_code(file_path):
     updated_code = line_by_line(code_no_comments_strings)
     #fix methods
     updated_code = fix_methods(updated_code)
-
     # Restore the comments and strings back into the updated code
     updated_code = restore_comments_and_strings(updated_code, placeholders)
     
