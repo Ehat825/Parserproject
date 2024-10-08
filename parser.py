@@ -30,7 +30,7 @@ def remove_comments_and_strings(code):
     def replace_with_placeholder(match):
         """Replace matched strings and comments with a unique placeholder."""
         placeholders.append(match.group(0))
-        return f"PLACEHOLDER_{len(placeholders) - 1}"
+        return f"PLACEHOLDER_{len(placeholders) - 1:04}"
 
     # Replace strings and comments with placeholders
     code_no_comments_strings = re.sub(string_pattern, replace_with_placeholder, code)
@@ -42,7 +42,7 @@ def remove_comments_and_strings(code):
 def restore_comments_and_strings(code, placeholders):
     """Restores the original strings and comments into the code."""
     for i, placeholder in enumerate(placeholders):
-        code = code.replace(f"PLACEHOLDER_{i}", placeholder)
+        code = code.replace(f"PLACEHOLDER_{i:04}", placeholder)
     return code
 
 def line_by_line(Code):
