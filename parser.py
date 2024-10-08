@@ -82,7 +82,7 @@ def line_by_line(Code):
                 nestLevel = get_indentation(next_line)
                 if nestLevel <level or next_line.strip() == "":
                     updated_lines.append(indent + "}")
-                    i += 1 
+                    i -= 1 
                     break
                 updated_lines.append(next_line)
                 i += 1
@@ -98,7 +98,7 @@ def line_by_line(Code):
                 nestLevel = get_indentation(next_line)
                 if nestLevel <level or next_line.strip() == "":
                     updated_lines.append(indent + "}")
-                    i += 1 
+                    i -= 1 
                     break
                 updated_lines.append(next_line)
                 i += 1
